@@ -2,7 +2,7 @@
 
 > Note: You must use [wrangler](https://developers.cloudflare.com/workers/cli-wrangler/install-update) 1.19.3 or newer to deploy this project.
 
-An edge queue service that runs on Cloudflare Workers using Durable Objects and KV. It is implemented as a simple REST API.
+An edge message queue service that runs on Cloudflare Workers using Durable Objects and KV. It is implemented as a simple REST API.
 
 This demo uses:
 
@@ -23,6 +23,17 @@ This demo uses:
 - `cd workers-queue-demo`
 - `npm install`
 - `wrangler login`
+- `wrangler kv:namespace create QUEUES_KV`
+  You should see something like:
+
+```
+🌀  Creating namespace with title "workers-queue-demo-QUEUES_KV"
+✨  Success!
+Add the following to your configuration file in your kv_namespaces array:
+{ binding = "QUEUES_KV", id = "baf085c23c..." }
+```
+
+- Add the KV config to `wrangler.toml`
 - `wrangler publish` will build, run tests, and deploy to Cloudflare
 
 You should see something like:

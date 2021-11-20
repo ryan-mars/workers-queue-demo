@@ -8,7 +8,8 @@ zone_id = ""
 compatibility_date = "2021-11-15"
 
 kv_namespaces = [
-  { binding = "QUEUES_KV", id = "1ee8d153e84a44e6a91d27ea38588b0d" },
+  # REPLACE THE LINE BELOW WITH THE OUTPUT OF `wrangler kv:namespace create QUEUES_KV`
+  { binding = "QUEUES_KV", id = "baf085c23c83436ca3b54751860dea7f" },
 ]
 
 [build]
