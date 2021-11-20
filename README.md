@@ -1,4 +1,4 @@
-# Durable Objects REST Queue Example
+# Durable Objects REST Message Queue Example
 
 > Note: You must use [wrangler](https://developers.cloudflare.com/workers/cli-wrangler/install-update) 1.19.3 or newer to deploy this project.
 
