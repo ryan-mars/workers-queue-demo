@@ -1,0 +1,287 @@
+openapi: 3.0.0
+info:
+  title: Workers Queue Demo
+  version: '1.0'
+  description: 'Edge queue REST API implemented on Cloudflare Workers.'
+  contact: {}
+  license:
+    name: MIT
+servers:
+  - description: Dev
+    url: 'https://workers-queue-demo.your-account.workers.dev'
+paths:
+  '/queues':
+    get:
+      description: 'Lists queues. If you have more than 1,000 queues only 1,000 will be returned. Additionally, a cursor will be returned. In this case, you can call this operation again with the cursor value to get the next 1,000 queues'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  queues:
+                    type: array
+                    description: Array of queues
+                    items:
+                      $ref: '#/components/schemas/Queue'
+                  cursor:
+                    type: string
+                    example: 06779da6940b431db6e566b4846d64db
+                    description: 'If you have more than 1,000 queues only 1,000 will be returned. Additionally, a cursor will be returned. In this case, you can call this operation again with the cursor value to get the next 1,000 queues.'
+                required:
+                  - queues
+      operationId: list-queues
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: cursor
+          description: 'String used to fetch the next 1,000 queues'
+    post:
+      description: Creates a queue
+      operationId: create-queue
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Queue'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Optional name
+                  example: things todo someday...
+                visibility_timeout:
+                  type: integer
+                  description: Default is 30 seconds
+                  default: 30
+                  minimum: 0
+                  maximum: 43200
+  '/queues/{queue_id}':
+    parameters:
+      - schema:
+          type: string
+        name: queue_id
+        in: path
+        required: true
+        description: 'queue id '
+    get:
+      description: Describes a queue
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Queue'
+        '404':
+          description: Not Found
+      operationId: get-queue
+    delete:
+      description: Deletes a queue and all messages in it.
+      operationId: delete-queue
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not Found
+  '/queues/{queue_id}/messages':
+    parameters:
+      - schema:
+          type: string
+        name: queue_id
+        in: path
+        required: true
+        description: 'Queue identifier'
+    get:
+      description: Gets messages from a queue
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PoppedMessage'
+                required:
+                  - messages
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+      operationId: get-messages
+      parameters:
+        - schema:
+            type: integer
+            default: 1
+          in: query
+          name: limit
+          description: Maximum number of messages to fetch.
+        - schema:
+            type: integer
+            default: 30
+            minimum: 0
+            maximum: 43200
+          in: query
+          name: visibility_timeout
+          description: Number of seconds to hide returned messages from other clients. Overrides the queue's visibility timeout for this call.
+      summary: ''
+    post:
+      description: Adds a message to a queue
+      operationId: create-message
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageMetadata'
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message_body:
+                  type: string
+                  description: Your message body
+                  example: A love letter perhaps...
+                ttl:
+                  type: number
+                  description: Seconds to leave the message in the queue before expiring. Default is message never expires. NOT IMPLEMENTED!
+                  minimum: 1
+              required:
+                - message_body
+        description: ''
+  '/queues/{queue_id}/messages/{message_id}':
+    parameters:
+      - schema:
+          type: string
+        name: queue_id
+        in: path
+        required: true
+        description: Queue identifier
+      - schema:
+          type: string
+        name: message_id
+        in: path
+        required: true
+        description: Message identifier
+    delete:
+      description: Deletes a message from a queue
+      operationId: delete-message
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: pop_receipt
+          description: Token proving prior receipt of the message
+          required: true
+components:
+  schemas:
+    Message:
+      title: Message
+      allOf:
+        - $ref: '#/components/schemas/MessageMetadata'
+        - $ref: '#/components/schemas/MessageBody'
+    Queue:
+      title: Queue
+      type: object
+      description: Metadata about a queue
+      properties:
+        queue_id:
+          type: string
+          description: Queue identifier
+          example: 01FMBTJ88TSBVDWGEPWANRK8ZR
+        name:
+          type: string
+          description: Optional name metadata
+          example: WOPR Tasks
+        created_time:
+          type: string
+          description: ISO 8601 formatted date string
+          example: '2021-11-13T04:55:03.808Z'
+        visibility_timeout:
+          type: integer
+          description: 'Length of time (in seconds) delivered messages will be invisible to other clients. '
+          example: 30
+          default: 30
+      required:
+        - queue_id
+        - created_time
+        - visibility_timeout
+    MessageBody:
+      title: MessageBody
+      description: The body of the message.
+      type: object
+      properties:
+        message_body:
+          type: string
+          description: Your message body as a raw string or perhaps base64 encoded if you'd like
+          example: SHALL WE PLAY A GAME?
+      required:
+        - message_body
+    MessageMetadata:
+      title: MessageMetadata
+      type: object
+      description: 'Necessary metadata about a message in the queue. Returned when adding a new message to a queue. '
+      properties:
+        queue_id:
+          type: string
+          example: 01FM074SR6ZEM89Z91WH1MZTDX
+          description: Queue identifier for this message
+        message_id:
+          type: string
+          description: Message identifier
+          example: 01FMBT32NYPA2FASH9REZZ3DBV
+        inserted_time:
+          type: string
+          description: 'When the message was added to the queue, ISO 8601 formatted'
+          example: '2021-11-13T04:55:03.808Z'
+      required:
+        - queue_id
+        - message_id
+        - inserted_time
+    PoppedMessage:
+      title: PoppedMessage
+      allOf:
+        - $ref: '#/components/schemas/MessageMetadata'
+        - type: object
+          properties:
+            pop_receipt:
+              type: string
+              description: Token certifying receipt of the message
+              example: 01FMBT0ZCBNMYWV320FBMPGZJ9
+            visibility_timeout:
+              type: number
+              minimum: 0
+              maximum: 43200
+              default: 0
+              example: 30
+              description: Seconds this message will remain hidden from other clients.
+          required:
+            - pop_receipt
+            - visibility_timeout
+        - $ref: '#/components/schemas/MessageBody'
+      description: A message returned from the get-messages operation

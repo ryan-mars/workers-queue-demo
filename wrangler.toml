@@ -1,0 +1,27 @@
+name = "workers-queue-demo"
+# type = "javascript" is required to use the `[build]` section
+type = "javascript"
+account_id = ""
+workers_dev = true
+route = ""
+zone_id = ""
+compatibility_date = "2021-11-15"
+
+kv_namespaces = [
+  { binding = "QUEUES_KV", id = "1ee8d153e84a44e6a91d27ea38588b0d" },
+]
+
+[build]
+command = "npm install && npm run build && npm run test"
+
+[build.upload]
+format = "modules"
+dir = "dist/src"
+main = "./index.mjs"
+
+[durable_objects]
+bindings = [{ name = "QUEUE", class_name = "Queue" }]
+
+[[migrations]]
+tag = "v1"              # Should be unique for each entry
+new_classes = ["Queue"]
