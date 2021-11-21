@@ -12,7 +12,7 @@ servers:
 paths:
   '/queues':
     get:
-      description: 'Lists queues. If you have more than 1,000 queues only 1,000 will be returned. Additionally, a cursor will be returned. In this case, you can call this operation again with the cursor value to get the next 1,000 queues'
+      description: 'Lists queues. If you have more than 1,000 queues 1,000 will be returned plus a cursor. The cursor may be used to fetch the next 1,000 queues'
       responses:
         '200':
           description: OK
